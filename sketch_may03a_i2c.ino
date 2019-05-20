@@ -19,8 +19,9 @@
 #define    ACC_FULL_SCALE_8_G        0x10
 #define    ACC_FULL_SCALE_16_G       0x18
  
-int firstSensor = 0;    // first analog sensor
- 
+int fsr = 0;    // first analog sensor
+int m00s = 0;    // 2nd analog sensor
+
 //Funcion auxiliar lectura
 void I2Cread(uint8_t Address, uint8_t Register, uint8_t Nbytes, uint8_t* Data)
 {
@@ -58,7 +59,7 @@ void setup()
 //   I2CwriteByte(MPU9250_ADDRESS, 0x37, 0x02);
 //   I2CwriteByte(MAG_ADDRESS, 0x0A, 0x01);
 
-pinMode(LED_BUILTIN, OUTPUT);
+//pinMode(LED_BUILTIN, OUTPUT);
 }
  
  
@@ -75,15 +76,19 @@ void loop()
    int16_t ax = (Buf[0] << 8 | Buf[1]);
    int16_t ay = (Buf[2] << 8 | Buf[3]);
    int16_t az = Buf[4] << 8 | Buf[5];
-
-if (ax > 600)
-{
-  digitalWrite(LED_BUILTIN, HIGH);
-}
-else if (ax < 600)
-{
-  digitalWrite(LED_BUILTIN, LOW);
-}
+   // Sensitivity Scale Factor = 2048 LSB/g = 0.48828125 mg/LSB
+   float sensitivity = 1/2048.0;
+   float a_x = ax * sensitivity;
+   float a_y = ay * sensitivity;
+   float a_z = az * sensitivity;
+//if (ax > 600)
+//{
+//  digitalWrite(LED_BUILTIN, HIGH);
+//}
+//else if (ax < 600)
+//{
+//  digitalWrite(LED_BUILTIN, LOW);
+//}
 
    
  
@@ -112,22 +117,25 @@ else if (ax < 600)
 //   int16_t mz = -(Mag[5] << 8 | Mag[4]);
  
 // read first analog input, divide by 4 to make the range 0-255:
-    firstSensor = analogRead(A0);
+    fsr = analogRead(A0);
+    m00s = analogRead(2);
 // delay 10ms to let the ADC recover:
 
    // --- Mostrar valores ---
-    //Serial.write(firstSensor);
-   Serial.print(firstSensor, DEC);
+   // FSR
+   Serial.print(fsr, DEC);
    Serial.print("\t");
    // Acelerometro
-   Serial.print(ax, DEC);
+   Serial.print(a_x, DEC);
    Serial.print("\t");
-   Serial.print(ay, DEC);
+   Serial.print(a_y, DEC);
    Serial.print("\t");
-   Serial.print(az, DEC);
+   Serial.print(a_z, DEC);
    Serial.print("\t");
+   // M00S
+   Serial.print(m00s, DEC);
 
-   Serial.flush();
+
    //flush();
  
    // Giroscopio
@@ -149,6 +157,6 @@ else if (ax < 600)
    
    // Fin medicion
    Serial.println("");
-   
-   delay(10);    
+   Serial.flush();  
+   delay(100);    
 }
